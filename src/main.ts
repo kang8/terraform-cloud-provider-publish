@@ -4,7 +4,6 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import {TerraformClient, TerraformMetadataFile} from './terraform'
 
-const providerPrefix = 'terraform-provider-'
 const fileRegex =
   /^(?<provider>[a-zA-Z0-9-]+)_(?<version>[a-zA-Z0-9-.]+)_(?<os>[a-zA-Z0-9-]+)_(?<arch>[a-zA-Z0-9-]+)\.(?<extension>[a-zA-Z0-9-.]+)$/
 
@@ -56,7 +55,7 @@ async function run(): Promise<void> {
     core.info(`Checking to see if gpg key exists...`)
     const existingKeys = await tfClient.getAllSigningKeys()
     let signingKey = existingKeys.data?.find(
-      key => key.attributes['ascii-armor'] === gpgKey
+      key => key.attributes['ascii-armor'].trim() === gpgKey.trim()
     )
     if (signingKey == null) {
       core.info(`Gpg key does not exist, creating...`)
@@ -137,7 +136,7 @@ async function run(): Promise<void> {
         readonly extension: string
       }
       if (
-        provider !== providerPrefix.concat(providerName) ||
+        provider !== providerName ||
         version !== providerVersion ||
         extension !== 'zip'
       ) {

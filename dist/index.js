@@ -35,7 +35,6 @@ const path = __importStar(__nccwpck_require__(1017));
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const terraform_1 = __nccwpck_require__(3620);
-const providerPrefix = 'terraform-provider-';
 const fileRegex = /^(?<provider>[a-zA-Z0-9-]+)_(?<version>[a-zA-Z0-9-.]+)_(?<os>[a-zA-Z0-9-]+)_(?<arch>[a-zA-Z0-9-]+)\.(?<extension>[a-zA-Z0-9-.]+)$/;
 async function run() {
     var _a, _b;
@@ -74,7 +73,7 @@ async function run() {
         }
         core.info(`Checking to see if gpg key exists...`);
         const existingKeys = await tfClient.getAllSigningKeys();
-        let signingKey = (_a = existingKeys.data) === null || _a === void 0 ? void 0 : _a.find(key => key.attributes['ascii-armor'] === gpgKey);
+        let signingKey = (_a = existingKeys.data) === null || _a === void 0 ? void 0 : _a.find(key => key.attributes['ascii-armor'].trim() === gpgKey.trim());
         if (signingKey == null) {
             core.info(`Gpg key does not exist, creating...`);
             signingKey = await tfClient.postSingingKey(gpgKey);
@@ -124,7 +123,7 @@ async function run() {
                 continue;
             }
             const { provider, version, os, arch, extension } = match === null || match === void 0 ? void 0 : match.groups;
-            if (provider !== providerPrefix.concat(providerName) ||
+            if (provider !== providerName ||
                 version !== providerVersion ||
                 extension !== 'zip') {
                 core.info(`Skipping file ${file}`);
@@ -222,7 +221,7 @@ class TerraformClient {
         };
         const response = await this.httpClient.postJson(GeneratePostProviderUrl(this.organizationName), body);
         if (response.result == null) {
-            throw new Error(`Invalid reponse code: ${response.statusCode}`);
+            throw new Error(`Invalid response code: ${response.statusCode}`);
         }
         return response.result.data;
     }
@@ -261,7 +260,7 @@ class TerraformClient {
                 attributes: {
                     version,
                     'key-id': keyId,
-                    protocols: ["5.0"]
+                    protocols: ['5.0']
                 }
             }
         };
