@@ -134,7 +134,6 @@ export class TerraformClient {
   async postProviderVersion(
     providerName: string,
     version: string,
-    supportedProtocols: string[],
     keyId: string
   ): Promise<TerraformProviderVersion> {
     const body = {
@@ -143,7 +142,7 @@ export class TerraformClient {
         attributes: {
           version,
           'key-id': keyId,
-          protocols: supportedProtocols
+          protocols: ['5.0']
         }
       }
     }
@@ -336,11 +335,7 @@ export interface TerraformProviderPlatformLinks {
   'provider-binary-upload': string
 }
 
-export interface TerraformManifestFile {
-  version: number
-  metadata: TerraformManifestFileMetadata
-}
-
-export interface TerraformManifestFileMetadata {
-  protocol_versions: string[]
+export interface TerraformMetadataFile {
+  version: string
+  project_name: string
 }

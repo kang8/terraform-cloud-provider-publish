@@ -54,25 +54,17 @@ async function run() {
         const providerDir = path.resolve(githubWorkspacePath, providerDirName);
         // Create the terraform client
         const tfClient = new terraform_1.TerraformClient(organizationName, organizationKey);
-        // Find the *manifest.json file, and calculate the required values from there
+        // Find the metadata.json file, and calculate the required values from there
         const providerFiles = await fs.readdir(providerDir);
-        const manifestFile = providerFiles.find(value => value.endsWith('manifest.json'));
-        if (manifestFile === undefined) {
-            throw new Error(`Unable to find manifest file in ${providerDir}`);
+        const metadataFile = providerFiles.find(value => value === 'metadata.json');
+        if (metadataFile === undefined) {
+            throw new Error(`Unable to find metadata file in ${providerDir}`);
         }
-        const parts = manifestFile.split('_');
-        if (parts.length !== 3) {
-            throw new Error(`Invalid manifest file ${manifestFile}`);
-        }
-        if (!parts[0].startsWith(providerPrefix)) {
-            throw new Error(`Invalid provider file names ${parts[0]}`);
-        }
-        const providerName = parts[0].substring(providerPrefix.length);
-        const providerVersion = parts[1];
         // Read the last bit of information from the manifest file
-        const manifestRaw = await fs.readFile(path.join(providerDir, manifestFile));
-        const manifest = JSON.parse(manifestRaw.toString());
-        const providerProtocols = manifest.metadata.protocol_versions;
+        const metadataRaw = await fs.readFile(path.join(providerDir, metadataFile));
+        const metadata = JSON.parse(metadataRaw.toString());
+        const providerName = metadata.project_name;
+        const providerVersion = metadata.version;
         // Now that we have the values we need, create everything
         core.info(`Checking to see if provider ${organizationName}/${providerName} already exists...`);
         let tfProvider = await tfClient.getProvider(providerName);
@@ -91,7 +83,7 @@ async function run() {
         let tfVersion = await tfClient.getProviderVersion(providerName, providerVersion);
         if (tfVersion == null) {
             core.info(`Creating new provider version ${providerVersion}`);
-            tfVersion = await tfClient.postProviderVersion(providerName, providerVersion, providerProtocols, signingKey.attributes['key-id']);
+            tfVersion = await tfClient.postProviderVersion(providerName, providerVersion, signingKey.attributes['key-id']);
         }
         // Take the output folder for all of the files and look for a SHA256SUM and SHA256SUM.sig
         const sumFileBase = providerFiles.find(value => value.endsWith('SHA256SUMS'));
@@ -262,14 +254,14 @@ class TerraformClient {
         const response = await this.httpClient.getJson(GenerateGetProviderVersionUrl(this.organizationName, providerName, version));
         return (_b = (_a = response.result) === null || _a === void 0 ? void 0 : _a.data) !== null && _b !== void 0 ? _b : null;
     }
-    async postProviderVersion(providerName, version, supportedProtocols, keyId) {
+    async postProviderVersion(providerName, version, keyId) {
         const body = {
             data: {
                 type: 'registry-provider-versions',
                 attributes: {
                     version,
                     'key-id': keyId,
-                    protocols: supportedProtocols
+                    protocols: ["5.0"]
                 }
             }
         };

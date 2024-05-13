@@ -2,7 +2,7 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
-import {TerraformClient, TerraformManifestFile} from './terraform'
+import {TerraformClient, TerraformMetadataFile} from './terraform'
 
 const providerPrefix = 'terraform-provider-'
 const fileRegex =
@@ -27,31 +27,19 @@ async function run(): Promise<void> {
     // Create the terraform client
     const tfClient = new TerraformClient(organizationName, organizationKey)
 
-    // Find the *manifest.json file, and calculate the required values from there
+    // Find the metadata.json file, and calculate the required values from there
     const providerFiles = await fs.readdir(providerDir)
-    const manifestFile = providerFiles.find(value =>
-      value.endsWith('manifest.json')
-    )
-    if (manifestFile === undefined) {
-      throw new Error(`Unable to find manifest file in ${providerDir}`)
+    const metadataFile = providerFiles.find(value => value === 'metadata.json')
+    if (metadataFile === undefined) {
+      throw new Error(`Unable to find metadata file in ${providerDir}`)
     }
-
-    const parts = manifestFile.split('_')
-    if (parts.length !== 3) {
-      throw new Error(`Invalid manifest file ${manifestFile}`)
-    }
-
-    if (!parts[0].startsWith(providerPrefix)) {
-      throw new Error(`Invalid provider file names ${parts[0]}`)
-    }
-
-    const providerName = parts[0].substring(providerPrefix.length)
-    const providerVersion = parts[1]
 
     // Read the last bit of information from the manifest file
-    const manifestRaw = await fs.readFile(path.join(providerDir, manifestFile))
-    const manifest: TerraformManifestFile = JSON.parse(manifestRaw.toString())
-    const providerProtocols = manifest.metadata.protocol_versions
+    const metadataRaw = await fs.readFile(path.join(providerDir, metadataFile))
+    const metadata: TerraformMetadataFile = JSON.parse(metadataRaw.toString())
+
+    const providerName = metadata.project_name
+    const providerVersion = metadata.version
 
     // Now that we have the values we need, create everything
     core.info(
@@ -87,7 +75,6 @@ async function run(): Promise<void> {
       tfVersion = await tfClient.postProviderVersion(
         providerName,
         providerVersion,
-        providerProtocols,
         signingKey.attributes['key-id']
       )
     }
