@@ -4,6 +4,7 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import {TerraformClient, TerraformMetadataFile} from './terraform'
 
+const providerPrefix = 'terraform-provider-'
 const fileRegex =
   /^(?<provider>[a-zA-Z0-9-]+)_(?<version>[a-zA-Z0-9-.]+)_(?<os>[a-zA-Z0-9-]+)_(?<arch>[a-zA-Z0-9-]+)\.(?<extension>[a-zA-Z0-9-.]+)$/
 
@@ -37,7 +38,7 @@ async function run(): Promise<void> {
     const metadataRaw = await fs.readFile(path.join(providerDir, metadataFile))
     const metadata: TerraformMetadataFile = JSON.parse(metadataRaw.toString())
 
-    const providerName = metadata.project_name
+    const providerName = metadata.project_name.substring(providerPrefix.length)
     const providerVersion = metadata.version
 
     // Now that we have the values we need, create everything
@@ -136,7 +137,7 @@ async function run(): Promise<void> {
         readonly extension: string
       }
       if (
-        provider !== providerName ||
+        provider !== providerPrefix.concat(providerName) ||
         version !== providerVersion ||
         extension !== 'zip'
       ) {

@@ -35,6 +35,7 @@ const path = __importStar(__nccwpck_require__(1017));
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const terraform_1 = __nccwpck_require__(3620);
+const providerPrefix = 'terraform-provider-';
 const fileRegex = /^(?<provider>[a-zA-Z0-9-]+)_(?<version>[a-zA-Z0-9-.]+)_(?<os>[a-zA-Z0-9-]+)_(?<arch>[a-zA-Z0-9-]+)\.(?<extension>[a-zA-Z0-9-.]+)$/;
 async function run() {
     var _a, _b;
@@ -62,7 +63,7 @@ async function run() {
         // Read the last bit of information from the manifest file
         const metadataRaw = await fs.readFile(path.join(providerDir, metadataFile));
         const metadata = JSON.parse(metadataRaw.toString());
-        const providerName = metadata.project_name;
+        const providerName = metadata.project_name.substring(providerPrefix.length);
         const providerVersion = metadata.version;
         // Now that we have the values we need, create everything
         core.info(`Checking to see if provider ${organizationName}/${providerName} already exists...`);
@@ -123,7 +124,7 @@ async function run() {
                 continue;
             }
             const { provider, version, os, arch, extension } = match === null || match === void 0 ? void 0 : match.groups;
-            if (provider !== providerName ||
+            if (provider !== providerPrefix.concat(providerName) ||
                 version !== providerVersion ||
                 extension !== 'zip') {
                 core.info(`Skipping file ${file}`);
