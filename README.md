@@ -12,9 +12,8 @@ This action was designed to be used in conjuction with the example terraform cod
 
 An example use of the action:
 ```
--
-    name: Publish provider
-    uses: thechrisjohnson/terraform-cloud-provider-publish@9c741f7c267fd8c1049089dbcc788eb83a1b0b69 # v1.3
+- name: Publish provider
+    uses: kang8/terraform-cloud-provider-publish@e636132c64188de90506bf70bff6a609c4e2fd3a
     with:
         organization-name: terraform-organization
         organization-api-token: ${{ secrets.TF_CLOUD_TOKEN }}
@@ -35,54 +34,3 @@ This is based on the recommended [go releaser file](https://github.com/hashicorp
 
 #### gpg-key
 The public key used to sign the files in the provider-directory in ascii armor format
-
-## Developing the action
-
-### Code in Main
-
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
-
-Install the dependencies  
-```bash
-$ npm install
-```
-
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
-```
-
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
-
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-
-...
-```
-
-### Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
-
